@@ -1,0 +1,117 @@
+<div class="page">
+  <nav class="nav">
+    <a class="nav__brand" href="#" (click)="$event.preventDefault(); scrollTo('top')">
+      <span class="nav__mark" aria-hidden="true">IE</span>
+      <span>ngx-image-editor</span>
+    </a>
+    <div class="nav__links">
+      <button type="button" class="nav__link" (click)="scrollTo('demo')">Demo</button>
+      <button type="button" class="nav__link" (click)="scrollTo('quickstart')">Quick start</button>
+      <button type="button" class="nav__link" (click)="scrollTo('features')">Features</button>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="hero__glow" aria-hidden="true"></div>
+    <div class="hero__logo" aria-hidden="true">IE</div>
+    <p class="hero__eyebrow">Angular image editor</p>
+    <h1 class="hero__title">ngx-image-editor</h1>
+    <p class="hero__tagline">
+      Canvas, layers, filters, and drawing — built for Angular.<br />
+      Free forever core. Premium when you need pro tools.
+    </p>
+    <div class="hero__badges">
+      @for (badge of badges; track badge) {
+        <span class="badge">{{ badge }}</span>
+      }
+    </div>
+    <div class="hero__cta">
+      <button type="button" class="btn btn--primary" (click)="scrollTo('demo')">
+        Try the live demo
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="scrollTo('quickstart')">
+        Quick start guide
+      </button>
+    </div>
+  </header>
+
+  <section class="section" id="demo">
+    <div class="section__head">
+      <h2>See it in action</h2>
+      <p>
+        Upload or drop images, move layers, add text and shapes, apply filters, and export —
+        all in your browser. Premium tools are unlocked in this demo.
+      </p>
+    </div>
+
+    <div class="demo-window" id="premium-demo">
+      <div class="demo-window__chrome">
+        <div class="demo-window__dots" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <span class="demo-window__title">Live editor · Premium unlocked</span>
+        <button type="button" class="btn btn--sm" (click)="theme.set(theme() === 'dark' ? 'light' : 'dark')">
+          {{ theme() === 'dark' ? 'Light' : 'Dark' }} chrome
+        </button>
+      </div>
+      <div class="demo-window__body demo-window__body--editor">
+        <ngx-image-editor
+          [theme]="theme()"
+          style="height: 640px; border: 0; border-radius: 0"
+        />
+      </div>
+    </div>
+
+    <p class="hint">
+      Shortcuts: <kbd>V</kbd> move · <kbd>T</kbd> text · <kbd>U</kbd> shape · <kbd>B</kbd> brush ·
+      <kbd>⌘/Ctrl+Z</kbd> undo · <kbd>⌘/Ctrl+D</kbd> duplicate · <kbd>Space</kbd> pan
+    </p>
+  </section>
+
+  <section class="section" id="quickstart">
+    <div class="section__head">
+      <h2>Quick start</h2>
+      <p>Three steps from install to a working editor.</p>
+    </div>
+    <div class="steps">
+      <article class="step">
+        <span class="step__num">1</span>
+        <h3>Install</h3>
+        <pre><code>{{ installCode }}</code></pre>
+      </article>
+      <article class="step">
+        <span class="step__num">2</span>
+        <h3>Provide</h3>
+        <pre><code>{{ setupCode }}</code></pre>
+      </article>
+      <article class="step">
+        <span class="step__num">3</span>
+        <h3>Drop in</h3>
+        <pre><code>{{ templateCode }}</code></pre>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="section__head">
+      <h2>Features</h2>
+      <p>A generous free tier, with premium tools behind an offline license key.</p>
+    </div>
+    <div class="features">
+      @for (f of features; track f.name) {
+        <article class="feature">
+          <div class="feature__top">
+            <h3>{{ f.name }}</h3>
+            <span class="pill" [class.pill--pro]="f.tier === 'Premium'">{{ f.tier }}</span>
+          </div>
+          <p>{{ f.desc }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Built by E.B Dev &amp; Design · source-available free/premium model</p>
+    <pre class="footer__install"><code>npm install @ebdev/ngx-image-editor</code></pre>
+  </footer>
+</div>

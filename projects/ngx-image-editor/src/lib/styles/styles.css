@@ -1,0 +1,494 @@
+:root,
+.ngx-nie,
+.ngx-nie--light {
+  --nie-bg: #f4f6fb;
+  --nie-surface: #ffffff;
+  --nie-surface-elevated: #f8fafc;
+  --nie-border: rgba(15, 23, 42, 0.12);
+  --nie-text: #0f172a;
+  --nie-muted: #64748b;
+  --nie-accent: #5b8def;
+  --nie-accent-2: #a855f7;
+  --nie-danger: #ef4444;
+  --nie-success: #22c55e;
+  --nie-radius: 10px;
+  --nie-font: 'Manrope', system-ui, sans-serif;
+  --nie-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --nie-toolbar-size: 64px;
+  --nie-panel-width: 240px;
+  --nie-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+}
+
+.ngx-nie--dark {
+  --nie-bg: #070a14;
+  --nie-surface: #0d1220;
+  --nie-surface-elevated: #121826;
+  --nie-border: rgba(148, 163, 184, 0.14);
+  --nie-text: #e8eefc;
+  --nie-muted: #94a3b8;
+  --nie-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.ngx-nie {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  background: var(--nie-bg);
+  color: var(--nie-text);
+  font-family: var(--nie-font);
+  border: 1px solid var(--nie-border);
+  border-radius: var(--nie-radius);
+  overflow: hidden;
+  outline: none;
+  position: relative;
+}
+
+.ngx-nie *,
+.ngx-nie *::before,
+.ngx-nie *::after {
+  box-sizing: border-box;
+}
+
+.ngx-nie__chrome {
+  display: grid;
+  grid-template-columns: var(--nie-toolbar-size) minmax(0, 1fr) var(--nie-panel-width);
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ngx-nie__menubar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--nie-surface);
+  border-bottom: 1px solid var(--nie-border);
+  flex-shrink: 0;
+}
+
+.ngx-nie__menubar-title {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, var(--nie-accent), var(--nie-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-right: 8px;
+}
+
+.ngx-nie__btn {
+  appearance: none;
+  border: 1px solid var(--nie-border);
+  background: var(--nie-surface-elevated);
+  color: var(--nie-text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ngx-nie__btn:hover:not(:disabled) {
+  border-color: var(--nie-accent);
+}
+
+.ngx-nie__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ngx-nie__btn--primary {
+  background: linear-gradient(135deg, var(--nie-accent), var(--nie-accent-2));
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+.ngx-nie__btn--icon {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  justify-content: center;
+  border-radius: 10px;
+  background: transparent;
+  border-color: transparent;
+}
+
+.ngx-nie__btn--icon.active {
+  background: rgba(91, 141, 239, 0.18);
+  color: var(--nie-accent);
+}
+
+.ngx-nie__btn--icon.premium-locked {
+  opacity: 0.4;
+}
+
+.ngx-nie__tool {
+  position: relative;
+}
+
+.ngx-nie__tooltip {
+  position: fixed;
+  z-index: 1000;
+  transform: translateY(-50%);
+  min-width: 160px;
+  max-width: 240px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--nie-surface-elevated);
+  color: var(--nie-text);
+  border: 1px solid var(--nie-border);
+  box-shadow: var(--nie-shadow);
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ngx-nie__tooltip strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ngx-nie__tooltip span {
+  color: var(--nie-muted);
+}
+
+.ngx-nie__toolbar-host {
+  display: block;
+  min-height: 0;
+  height: 100%;
+  overflow: visible;
+  background: var(--nie-surface);
+  border-right: 1px solid var(--nie-border);
+  position: relative;
+  z-index: 5;
+}
+
+.ngx-nie__toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+  height: 100%;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
+}
+
+.ngx-nie__toolbar::-webkit-scrollbar,
+.ngx-nie__side::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ngx-nie__toolbar::-webkit-scrollbar-thumb,
+.ngx-nie__side::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+  border-radius: 999px;
+}
+
+.ngx-nie__toolbar::-webkit-scrollbar-track,
+.ngx-nie__side::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ngx-nie__stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background:
+    linear-gradient(45deg, #1a2030 25%, transparent 25%),
+    linear-gradient(-45deg, #1a2030 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1a2030 75%),
+    linear-gradient(-45deg, transparent 75%, #1a2030 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-color: #121826;
+  overflow: hidden;
+}
+
+.ngx-nie--light .ngx-nie__stage {
+  background-color: #e2e8f0;
+  background-image:
+    linear-gradient(45deg, #cbd5e1 25%, transparent 25%),
+    linear-gradient(-45deg, #cbd5e1 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #cbd5e1 75%),
+    linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.ngx-nie__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: inherit;
+  touch-action: none;
+}
+
+.ngx-nie__drop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(91, 141, 239, 0.12);
+  border: 2px dashed var(--nie-accent);
+  color: var(--nie-text);
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ngx-nie__drop.visible {
+  opacity: 1;
+}
+
+.ngx-nie__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--nie-muted);
+  pointer-events: none;
+  text-align: center;
+  padding: 24px;
+}
+
+.ngx-nie__empty strong {
+  color: var(--nie-text);
+  font-size: 16px;
+}
+
+.ngx-nie__side {
+  display: flex;
+  flex-direction: column;
+  background: var(--nie-surface);
+  border-left: 1px solid var(--nie-border);
+  min-height: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
+}
+
+ngx-nie-layers-panel,
+ngx-nie-properties-panel {
+  display: block;
+  flex-shrink: 0;
+}
+
+.ngx-nie__panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-bottom: 1px solid var(--nie-border);
+}
+
+.ngx-nie__panel-header {
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--nie-muted);
+  border-bottom: 1px solid var(--nie-border);
+}
+
+.ngx-nie__panel-body {
+  padding: 8px;
+}
+
+.ngx-nie__layer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.ngx-nie__layer:hover {
+  background: rgba(91, 141, 239, 0.08);
+}
+
+.ngx-nie__layer.active {
+  background: rgba(91, 141, 239, 0.16);
+}
+
+.ngx-nie__layer-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ngx-nie__layer-action {
+  width: 24px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.ngx-nie__layer-action:hover {
+  opacity: 1;
+}
+
+.ngx-nie__layer-action--danger:hover {
+  color: var(--nie-danger);
+  border-color: var(--nie-danger);
+}
+
+.ngx-nie__layer-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--nie-surface-elevated);
+  border: 1px solid var(--nie-border);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--nie-muted);
+  flex-shrink: 0;
+}
+
+.ngx-nie__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.ngx-nie__field label {
+  color: var(--nie-muted);
+  font-size: 11px;
+}
+
+.ngx-nie__field input[type='range'] {
+  width: 100%;
+}
+
+.ngx-nie__field input[type='color'],
+.ngx-nie__field input[type='text'],
+.ngx-nie__field select {
+  background: var(--nie-surface-elevated);
+  border: 1px solid var(--nie-border);
+  color: var(--nie-text);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.ngx-nie__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ngx-nie__badge--premium {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+}
+
+.ngx-nie__statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--nie-muted);
+  background: var(--nie-surface);
+  border-top: 1px solid var(--nie-border);
+  flex-shrink: 0;
+}
+
+.ngx-nie__file-input {
+  display: none;
+}
+
+.ngx-nie-text-editor {
+  position: absolute;
+  z-index: 5;
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--nie-accent);
+  border-radius: 6px;
+  background: var(--nie-surface);
+  color: var(--nie-text);
+  font-family: var(--nie-font);
+  font-weight: 600;
+  line-height: 1.25;
+  resize: both;
+  outline: none;
+  box-shadow: var(--nie-shadow);
+}
+
+.ngx-nie__export-dialog {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 20;
+}
+
+.ngx-nie__export-card {
+  width: min(360px, 92%);
+  background: var(--nie-surface);
+  border: 1px solid var(--nie-border);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: var(--nie-shadow);
+}
+
+.ngx-nie__export-card h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.ngx-nie__export-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.ngx-nie__kbd {
+  font-family: var(--nie-mono);
+  font-size: 10px;
+  color: var(--nie-muted);
+  margin-left: auto;
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@ebdev/ngx-image-editor",
+  "version": "0.1.0",
+  "description": "Professional Angular image editor with free and premium feature tiers",
+  "keywords": [
+    "angular",
+    "image-editor",
+    "canvas",
+    "photo-editor",
+    "ngx",
+    "layers",
+    "filters"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://www.ebdev-design.com",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eliranbar/ngx-edit-images.git"
+  },
+  "peerDependencies": {
+    "@angular/common": "^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@angular/core": "^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@angular/forms": "^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0 || ^22.0.0",
+    "rxjs": "^6.5.3 || ^7.4.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@noble/ed25519": "^3.1.0",
+    "@noble/hashes": "^2.2.0"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    "./styles.css": {
+      "default": "./styles.css"
+    }
+  }
+}

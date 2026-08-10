@@ -1,0 +1,42 @@
+{
+  "name": "ngx-edit-images",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve demo",
+    "build": "ng build ngx-image-editor",
+    "build:demo": "ng build demo",
+    "watch": "ng build ngx-image-editor --watch --configuration development",
+    "test": "ng test ngx-image-editor --watch=false",
+    "test:demo": "ng test demo --watch=false",
+    "e2e": "playwright test",
+    "license": "node tools/generate-license.mjs",
+    "pack:lib": "ng build ngx-image-editor && npm pack ./dist/ngx-image-editor",
+    "publish:dry": "ng build ngx-image-editor && npm publish ./dist/ngx-image-editor --dry-run"
+  },
+  "private": true,
+  "packageManager": "npm@10.9.4",
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "@noble/ed25519": "^3.1.0",
+    "@noble/hashes": "^2.3.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.20",
+    "@angular/cli": "^21.2.18",
+    "@angular/compiler-cli": "^21.2.0",
+    "@playwright/test": "^1.62.1",
+    "jsdom": "^28.1.0",
+    "ng-packagr": "^21.2.7",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.10"
+  }
+}
