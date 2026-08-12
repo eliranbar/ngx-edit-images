@@ -34,6 +34,8 @@ export const NIE_FEATURES = {
   nonDestructiveFilters: 'nonDestructiveFilters',
   extendedFilters: 'extendedFilters',
   exportSvg: 'exportSvg',
+  /** Import PDF pages as editable image layers. */
+  pdf: 'pdf',
   // Phase 3 stubs
   psd: 'psd',
   raw: 'raw',
@@ -78,6 +80,7 @@ export const PREMIUM_FEATURES: readonly NieFeatureId[] = [
   NIE_FEATURES.nonDestructiveFilters,
   NIE_FEATURES.extendedFilters,
   NIE_FEATURES.exportSvg,
+  NIE_FEATURES.pdf,
   NIE_FEATURES.psd,
   NIE_FEATURES.raw,
   NIE_FEATURES.colorManagement,

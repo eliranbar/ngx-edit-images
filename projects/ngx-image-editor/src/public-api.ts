@@ -37,6 +37,16 @@ export { ShortcutRegistry, DEFAULT_SHORTCUTS, formatShortcutLabel } from './lib/
 export type { ShortcutAction, ShortcutBinding, ShortcutOverrides } from './lib/engine/shortcuts';
 export { exportDocument, downloadExport } from './lib/engine/export';
 export type { ExportOptions, ExportResult, ExportFormat } from './lib/engine/export';
+export {
+  isPdfFile,
+  inspectPdf,
+  rasterizePdfPages,
+} from './lib/engine/pdf-import';
+export type {
+  PdfImportOptions,
+  PdfPageRaster,
+  PdfDocumentInfo,
+} from './lib/engine/pdf-import';
 export { createFilter, BASIC_FILTER_TYPES, EXTENDED_FILTER_TYPES } from './lib/engine/filters/types';
 export type { FilterDescriptor, FilterType } from './lib/engine/filters/types';
 export {

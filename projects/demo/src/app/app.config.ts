@@ -3,12 +3,14 @@ import { provideImageEditor } from 'ngx-image-editor';
 
 /**
  * Demo premium license. Bound to demo hosts and expires 2027-08-10.
+ * Empty features + plan "premium" unlocks all current PREMIUM_FEATURES (incl. pdf).
  * Reissue with:
  *   npm run license -- --licensee "ngx-image-editor demo" \
- *     --domains "ngx-image-editor.ebdev-design.com,localhost,127.0.0.1"
+ *     --domains "ngx-image-editor.ebdev-design.com,localhost,127.0.0.1" \
+ *     --expiry "2027-08-10" --features ""
  */
 const DEMO_LICENSE_KEY =
-  'eyJwIjoiZXlKd2JHRnVJam9pY0hKbGJXbDFiU0lzSW1abFlYUjFjbVZ6SWpwYkltSnlkWE5vSWl3aVpYSmhjMlZ5SWl3aWJXRnphM01pTENKbmNtOTFjSE1pTENKaWJHVnVaRTF2WkdWeklpd2lZV1IyWVc1alpXUlRaV3hsWTNScGIyNGlMQ0pqYkc5dVpWTjBZVzF3SWl3aWFHVmhiR2x1WnlJc0luQmxjbk53WldOMGFYWmxJaXdpZDJGeWNDSXNJbXhoZVdWeVUzUjViR1Z6SWl3aVlXUnFkWE4wYldWdWRFeGhlV1Z5Y3lJc0ltNXZia1JsYzNSeWRXTjBhWFpsUm1sc2RHVnljeUlzSW1WNGRHVnVaR1ZrUm1sc2RHVnljeUlzSW1WNGNHOXlkRk4yWnlKZExDSmxlSEJwY25raU9pSXlNREkzTFRBNExURXdJaXdpYkdsalpXNXpaV1VpT2lKdVozZ3RhVzFoWjJVdFpXUnBkRzl5SUdSbGJXOGlMQ0prYjIxaGFXNXpJanBiSW01bmVDMXBiV0ZuWlMxbFpHbDBiM0l1WldKa1pYWXRaR1Z6YVdkdUxtTnZiU0lzSW14dlkyRnNhRzl6ZENJc0lqRXlOeTR3TGpBdU1TSmRMQ0p3Y205a2RXTjBJam9pUUdWaVpHVjJMMjVuZUMxcGJXRm5aUzFsWkdsMGIzSWlMQ0pyYVdRaU9pSnVhV1V0TWpBeU5pMHdPQ0o5IiwicyI6ImdIbGp4Mk1hRHdMeTRJdUlmdnNHOFlkUm1LMGx2VnJMRGszTU1HQUZkYzJPMkcrcmw0MWx4UnNrclVwby95TG15QStDR0UxSmVhaHN3RFpYd3pyWENBPT0ifQ==';
+  'eyJwIjoiZXlKd2JHRnVJam9pY0hKbGJXbDFiU0lzSW1abFlYUjFjbVZ6SWpwYlhTd2laWGh3YVhKNUlqb2lNakF5Tnkwd09DMHhNQ0lzSW14cFkyVnVjMlZsSWpvaWJtZDRMV2x0WVdkbExXVmthWFJ2Y2lCa1pXMXZJaXdpWkc5dFlXbHVjeUk2V3lKdVozZ3RhVzFoWjJVdFpXUnBkRzl5TG1WaVpHVjJMV1JsYzJsbmJpNWpiMjBpTENKc2IyTmhiR2h2YzNRaUxDSXhNamN1TUM0d0xqRWlYU3dpY0hKdlpIVmpkQ0k2SWtCbFltUmxkaTl1WjNndGFXMWhaMlV0WldScGRHOXlJaXdpYTJsa0lqb2libWxsTFRJd01qWXRNRGdpZlE9PSIsInMiOiJFY0N0eGhwVzRWaDZBZGNFeUZXaXJvTTU5UXRvcEt6RXpzYkhiUGNteTFYNlhnQ3FTbmxZV3QvTlBBemhnc1pubXNQRVJFMjhXcCtHNzQrRDY3VjJDQT09In0=';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,6 +20,7 @@ export const appConfig: ApplicationConfig = {
       theme: 'dark',
       canvasWidth: 1200,
       canvasHeight: 800,
+      pdfWorkerSrc: '/pdf.worker.min.mjs',
     }),
   ],
 };

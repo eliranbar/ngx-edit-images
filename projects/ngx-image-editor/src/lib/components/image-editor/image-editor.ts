@@ -20,6 +20,7 @@ import { ImageEditorEngine } from '../../engine/engine';
 import type { ExportFormat, ExportResult } from '../../engine/export';
 import type { AnyLayer, BlendMode, ShapeKind, TextLayer } from '../../engine/layers/types';
 import type { FilterDescriptor } from '../../engine/filters/types';
+import { isPdfFile } from '../../engine/pdf-import';
 import {
   SetOpacityCommand,
   SetBlendModeCommand,
@@ -52,9 +53,38 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
   template: `
     <div class="ngx-nie__menubar">
       <span class="ngx-nie__menubar-title">ngx-image-editor</span>
+      <button
+        type="button"
+        class="ngx-nie__btn"
+        title="Start a completely new canvas (removes all layers)"
+        (click)="newCanvas()"
+      >
+        New
+      </button>
       <button type="button" class="ngx-nie__btn" (click)="fileInput.click()">
         Upload
       </button>
+      @if (isFeatureEnabled(NIE_FEATURES.pdf)) {
+        <button
+          type="button"
+          class="ngx-nie__btn"
+          title="Import PDF pages as image layers (Premium)"
+          (click)="pdfInput.click()"
+        >
+          PDF
+          <span class="ngx-nie__badge ngx-nie__badge--premium">Pro</span>
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="ngx-nie__btn premium-locked"
+          title="PDF import is a Premium feature"
+          (click)="onGated(NIE_FEATURES.pdf)"
+        >
+          PDF
+          <span class="ngx-nie__badge ngx-nie__badge--premium">Pro</span>
+        </button>
+      }
       <button
         type="button"
         class="ngx-nie__btn"
@@ -72,6 +102,14 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
         [title]="'Redo (' + shortcutLabel('edit.redo') + ')'"
       >
         Redo
+      </button>
+      <button
+        type="button"
+        class="ngx-nie__btn"
+        (click)="addLayer()"
+        title="New empty drawing layer"
+      >
+        New layer
       </button>
       <button
         type="button"
@@ -102,6 +140,13 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
         accept="image/*"
         multiple
         (change)="onFilesSelected($event)"
+      />
+      <input
+        #pdfInput
+        class="ngx-nie__file-input"
+        type="file"
+        accept="application/pdf,.pdf"
+        (change)="onPdfSelected($event)"
       />
     </div>
 
@@ -155,8 +200,8 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
 
         @if (layerCount() === 0 && !dragging()) {
           <div class="ngx-nie__empty">
-            <strong>Drop an image or click Upload</strong>
-            <span>Move · Resize · Crop · Text · Shapes · Filters · Export</span>
+            <strong>Drop an image or PDF, or click Upload</strong>
+            <span>Move · Resize · Crop · Text · Shapes · PDF · Filters · Export</span>
           </div>
         }
       </div>
@@ -168,6 +213,8 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
           (select)="selectLayer($event)"
           (toggleVisible)="toggleVisible($event)"
           (remove)="removeLayer($event)"
+          (add)="addLayer()"
+          (clearAll)="clearAllLayers()"
         />
         <ngx-nie-properties-panel
           [layer]="activeLayer()"
@@ -230,6 +277,70 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
         </div>
       </div>
     }
+
+    @if (pdfImport(); as pdf) {
+      <div class="ngx-nie__export-dialog" (click)="cancelPdfImport()">
+        <div class="ngx-nie__export-card" (click)="$event.stopPropagation()">
+          <h3>Import PDF</h3>
+          <p class="ngx-nie__pdf-meta">
+            {{ pdf.fileName }}
+            @if (pdf.title) {
+              <span> · {{ pdf.title }}</span>
+            }
+            · {{ pdf.pageCount }} page{{ pdf.pageCount === 1 ? '' : 's' }}
+          </p>
+          <div class="ngx-nie__field">
+            <label>Pages</label>
+            <select
+              [value]="pdf.mode"
+              (change)="pdfImport.update((p) => p ? { ...p, mode: $any($event.target).value } : p)"
+            >
+              <option value="all">All pages (max {{ pdfMaxPages }})</option>
+              <option value="first">First page only</option>
+              <option value="range">Page range</option>
+            </select>
+          </div>
+          @if (pdf.mode === 'range') {
+            <div class="ngx-nie__field">
+              <label>From – to</label>
+              <div class="ngx-nie__pdf-range">
+                <input
+                  type="number"
+                  min="1"
+                  [max]="pdf.pageCount"
+                  [value]="pdf.from"
+                  (input)="pdfImport.update((p) => p ? { ...p, from: +$any($event.target).value } : p)"
+                />
+                <span>–</span>
+                <input
+                  type="number"
+                  min="1"
+                  [max]="pdf.pageCount"
+                  [value]="pdf.to"
+                  (input)="pdfImport.update((p) => p ? { ...p, to: +$any($event.target).value } : p)"
+                />
+              </div>
+            </div>
+          }
+          @if (pdf.error) {
+            <p class="ngx-nie__pdf-error">{{ pdf.error }}</p>
+          }
+          <div class="ngx-nie__export-actions">
+            <button type="button" class="ngx-nie__btn" (click)="cancelPdfImport()" [disabled]="pdf.busy">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="ngx-nie__btn ngx-nie__btn--primary"
+              (click)="confirmPdfImport()"
+              [disabled]="pdf.busy"
+            >
+              {{ pdf.busy ? 'Importing…' : 'Import as images' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class ImageEditorComponent implements AfterViewInit, OnDestroy {
@@ -243,11 +354,14 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('fileInput', { static: true }) fileInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('pdfInput', { static: true }) pdfInputRef!: ElementRef<HTMLInputElement>;
 
   private readonly config = inject(NIE_CONFIG);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly features = inject(FeatureGateService, { optional: true });
 
   readonly NIE_FEATURES = NIE_FEATURES;
+  readonly pdfMaxPages = this.config.pdfMaxPages ?? 20;
 
   engine!: ImageEditorEngine;
 
@@ -264,6 +378,17 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
   readonly canUndo = signal(false);
   readonly canRedo = signal(false);
   readonly enabledFeatures = signal<ReadonlySet<NieFeatureId>>(new Set());
+  readonly pdfImport = signal<{
+    file: File;
+    fileName: string;
+    title?: string;
+    pageCount: number;
+    mode: 'all' | 'first' | 'range';
+    from: number;
+    to: number;
+    busy: boolean;
+    error: string | null;
+  } | null>(null);
 
   readonly resolvedTheme = computed(
     () => this.theme() ?? this.config.theme ?? 'dark',
@@ -392,6 +517,9 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
       this.resizeCanvas();
     }
     this.engine.doc.setViewport({ zoom: 0.6, panX: 40, panY: 40 });
+    // Expose the engine on the host element for e2e tests / debugging.
+    (this.host.nativeElement as HTMLElement & { __nieEngine?: ImageEditorEngine }).__nieEngine =
+      this.engine;
     this.ready.emit(this.engine);
     this.paint();
   }
@@ -425,6 +553,26 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
 
   selectLayer(id: string): void {
     this.engine.doc.setActiveLayer(id);
+  }
+
+  addLayer(): void {
+    this.engine.addDrawingLayer();
+  }
+
+  newCanvas(): void {
+    if (
+      this.layerCount() > 0 &&
+      !confirm('Start a new canvas? All layers will be removed and history cleared.')
+    ) {
+      return;
+    }
+    this.engine.newCanvas();
+  }
+
+  clearAllLayers(): void {
+    if (this.layerCount() === 0) return;
+    if (!confirm('Delete all layers? (You can undo this.)')) return;
+    this.engine.clearAllLayers();
   }
 
   toggleVisible(id: string): void {
@@ -480,9 +628,89 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
     for (const file of files) {
       if (file.type.startsWith('image/')) {
         await this.engine.loadImageFile(file);
+      } else if (isPdfFile(file)) {
+        await this.beginPdfImport(file);
       }
     }
     input.value = '';
+  }
+
+  async onPdfSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    await this.beginPdfImport(file);
+  }
+
+  cancelPdfImport(): void {
+    if (this.pdfImport()?.busy) return;
+    this.pdfImport.set(null);
+  }
+
+  async confirmPdfImport(): Promise<void> {
+    const state = this.pdfImport();
+    if (!state || state.busy) return;
+    if (!this.features?.require(NIE_FEATURES.pdf)) {
+      this.pdfImport.set(null);
+      return;
+    }
+
+    let pages: number[] | undefined;
+    if (state.mode === 'first') {
+      pages = [1];
+    } else if (state.mode === 'range') {
+      const from = Math.max(1, Math.min(state.pageCount, state.from));
+      const to = Math.max(from, Math.min(state.pageCount, state.to));
+      pages = Array.from({ length: to - from + 1 }, (_, i) => from + i);
+    }
+
+    this.pdfImport.update((p) => (p ? { ...p, busy: true, error: null } : p));
+    try {
+      await this.engine.loadPdfFile(state.file, {
+        pages,
+        maxPages: this.pdfMaxPages,
+        scale: this.config.pdfRenderScale ?? 2,
+        workerSrc: this.config.pdfWorkerSrc,
+      });
+      this.pdfImport.set(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to import PDF';
+      this.pdfImport.update((p) => (p ? { ...p, busy: false, error: message } : p));
+    }
+  }
+
+  private async beginPdfImport(file: File): Promise<void> {
+    if (!this.features?.require(NIE_FEATURES.pdf, true)) {
+      return;
+    }
+    try {
+      const { inspectPdf } = await import('../../engine/pdf-import');
+      const info = await inspectPdf(file, { workerSrc: this.config.pdfWorkerSrc });
+      this.pdfImport.set({
+        file,
+        fileName: file.name,
+        title: info.title,
+        pageCount: info.pageCount,
+        mode: info.pageCount > 1 ? 'all' : 'first',
+        from: 1,
+        to: Math.min(info.pageCount, this.pdfMaxPages),
+        busy: false,
+        error: null,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to read PDF';
+      this.pdfImport.set({
+        file,
+        fileName: file.name,
+        pageCount: 1,
+        mode: 'first',
+        from: 1,
+        to: 1,
+        busy: false,
+        error: message,
+      });
+    }
   }
 
   onDragOver(event: DragEvent): void {
@@ -497,6 +725,8 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
     for (const file of files) {
       if (file.type.startsWith('image/')) {
         await this.engine.loadImageFile(file);
+      } else if (isPdfFile(file)) {
+        await this.beginPdfImport(file);
       }
     }
   }

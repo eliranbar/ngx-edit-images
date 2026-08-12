@@ -40,6 +40,15 @@ export interface ImageEditorConfig {
   canvasHeight?: number;
   /** Background color behind transparent areas. */
   canvasBackground?: string;
+  /**
+   * pdf.js worker URL for premium PDF import.
+   * Defaults to a CDN build matching the installed pdfjs-dist version.
+   */
+  pdfWorkerSrc?: string;
+  /** Max PDF pages imported in one action (default 20). */
+  pdfMaxPages?: number;
+  /** Render scale when rasterizing PDF pages (default 2). */
+  pdfRenderScale?: number;
 }
 
 export const DEFAULT_TOOLS: NieToolId[] = [

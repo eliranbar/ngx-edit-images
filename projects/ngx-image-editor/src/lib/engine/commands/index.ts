@@ -19,6 +19,22 @@ export class AddLayerCommand implements Command {
   }
 }
 
+export class ClearAllLayersCommand implements Command {
+  readonly name = 'clearAllLayers';
+  private snapshot: {
+    layers: AnyLayer[];
+    rootOrder: string[];
+    activeLayerId: string | null;
+  } | null = null;
+  constructor(private doc: EditorDocument) {}
+  do(): void {
+    this.snapshot = this.doc.clearAllLayers();
+  }
+  undo(): void {
+    if (this.snapshot) this.doc.restoreAllLayers(this.snapshot);
+  }
+}
+
 export class RemoveLayerCommand implements Command {
   readonly name = 'removeLayer';
   private layer: AnyLayer | undefined;

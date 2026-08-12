@@ -32,6 +32,7 @@ export class App {
     { name: 'Clone & healing', tier: 'Premium', desc: 'Retouching tools.' },
     { name: 'Perspective & warp', tier: 'Premium', desc: 'Advanced transforms.' },
     { name: 'Adjustment layers', tier: 'Premium', desc: 'Non-destructive color grading.' },
+    { name: 'PDF as images', tier: 'Premium', desc: 'Import PDF pages as editable image layers.' },
     { name: 'SVG / PSD / RAW', tier: 'Premium', desc: 'Pro interchange formats.' },
   ];
 

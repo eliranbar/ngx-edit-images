@@ -10,14 +10,12 @@ import {
 import {
   createTextLayer,
   createShapeLayer,
-  createDrawingLayer,
   defaultTransform,
   type DrawingStroke,
   type DrawingLayer,
   type ShapeLayer,
   type TextLayer,
   type ImageLayer,
-  type AnyLayer,
 } from '../layers/types';
 import {
   rectSelectionMask,
@@ -129,25 +127,23 @@ export class ShapeTool implements Tool {
   }
 }
 
+/** Active image/drawing layer suitable for paint tools (no auto-create / auto-switch). */
+function getActivePaintLayer(ctx: ToolContext): ImageLayer | DrawingLayer | null {
+  const active = ctx.doc.getActiveLayer();
+  if (!active || active.locked || !active.visible) return null;
+  if (active.type === 'image' || active.type === 'drawing') return active;
+  return null;
+}
+
 function beginStroke(
   e: PointerEventData,
   ctx: ToolContext,
   erase: boolean,
 ): { stroke: DrawingStroke; layerId: string } | null {
   if (!ctx.isFeatureEnabled(erase ? 'eraser' : 'brush')) return null;
-  let layer = ctx.doc.getActiveLayer();
-  if (!layer || layer.type !== 'drawing') {
-    const created = createDrawingLayer({
-      name: erase ? 'Eraser' : 'Drawing',
-      transform: defaultTransform({
-        x: 0,
-        y: 0,
-        width: ctx.doc.width,
-        height: ctx.doc.height,
-      }),
-    });
-    ctx.history.execute(new AddLayerCommand(ctx.doc, created));
-    layer = created;
+  const layer = ctx.doc.getActiveLayer();
+  if (!layer || layer.type !== 'drawing' || layer.locked || !layer.visible) {
+    return null;
   }
   const stroke: DrawingStroke = {
     points: [{ x: e.x, y: e.y, pressure: e.pressure }],
@@ -162,37 +158,22 @@ function beginStroke(
   return { stroke, layerId: layer.id };
 }
 
-function ensureNamedRasterLayer(
-  ctx: ToolContext,
-  name: string,
-): DrawingLayer {
-  const existing = ctx.doc
-    .getLayers()
-    .find((l) => l.type === 'drawing' && l.name === name) as DrawingLayer | undefined;
-  if (existing) {
-    if (
-      !existing.raster ||
-      existing.raster.width !== ctx.doc.width ||
-      existing.raster.height !== ctx.doc.height
-    ) {
-      existing.raster = emptyImageData(ctx.doc.width, ctx.doc.height);
-      ctx.doc.notify();
-    }
-    ctx.doc.setActiveLayer(existing.id);
-    return existing;
+/** Use the active drawing layer's raster buffer — never create or switch layers. */
+function ensureActiveRasterLayer(ctx: ToolContext): DrawingLayer | null {
+  const active = ctx.doc.getActiveLayer();
+  if (!active || active.type !== 'drawing' || active.locked || !active.visible) {
+    return null;
   }
-  const created = createDrawingLayer({
-    name,
-    transform: defaultTransform({
-      x: 0,
-      y: 0,
-      width: ctx.doc.width,
-      height: ctx.doc.height,
-    }),
-    raster: emptyImageData(ctx.doc.width, ctx.doc.height),
-  });
-  ctx.history.execute(new AddLayerCommand(ctx.doc, created));
-  return created;
+  const layer = active as DrawingLayer;
+  if (
+    !layer.raster ||
+    layer.raster.width !== ctx.doc.width ||
+    layer.raster.height !== ctx.doc.height
+  ) {
+    layer.raster = emptyImageData(ctx.doc.width, ctx.doc.height);
+    ctx.doc.notify();
+  }
+  return layer;
 }
 
 function captureComposite(ctx: ToolContext): ImageData {
@@ -278,13 +259,22 @@ function eraseCircleOnCanvas(
   c.restore();
 }
 
-function resolveEraseTarget(ctx: ToolContext, e: PointerEventData): AnyLayer | null {
-  const hit = ctx.doc.hitTest(e.x, e.y);
-  if (hit && (hit.type === 'image' || hit.type === 'drawing')) return hit;
-  const active = ctx.doc.getActiveLayer();
-  if (active && (active.type === 'image' || active.type === 'drawing')) return active;
-  const images = ctx.doc.getLayers().filter((l) => l.type === 'image');
-  return images.length ? images[images.length - 1]! : null;
+function paintCircleOnCanvas(
+  canvas: HTMLCanvasElement,
+  x: number,
+  y: number,
+  radius: number,
+  color: string,
+  opacity: number,
+): void {
+  const c = canvas.getContext('2d')!;
+  c.save();
+  c.globalAlpha = Math.max(0, Math.min(1, opacity));
+  c.fillStyle = color;
+  c.beginPath();
+  c.arc(x, y, Math.max(1, radius), 0, Math.PI * 2);
+  c.fill();
+  c.restore();
 }
 
 function parseCssColor(color: string): [number, number, number] {
@@ -310,15 +300,87 @@ export class BrushTool implements Tool {
   readonly cursor = 'crosshair';
   private stroke: DrawingStroke | null = null;
   private layerId: string | null = null;
+  private mode: 'image' | 'drawing' | null = null;
+  private imageCanvas: HTMLCanvasElement | null = null;
+  private beforePixels: ImageData | null = null;
+  private lastX = 0;
+  private lastY = 0;
 
   pointerDown(e: PointerEventData, ctx: ToolContext): void {
+    if (!ctx.isFeatureEnabled('brush')) return;
+    const target = getActivePaintLayer(ctx);
+    if (!target) return;
+
+    if (target.type === 'image') {
+      const mapped = docToImagePixels(target, e.x, e.y);
+      if (!mapped) return;
+      this.mode = 'image';
+      this.layerId = target.id;
+      this.imageCanvas = mapped.canvas;
+      this.beforePixels = mapped.canvas
+        .getContext('2d')!
+        .getImageData(0, 0, mapped.canvas.width, mapped.canvas.height);
+      this.lastX = mapped.x;
+      this.lastY = mapped.y;
+      paintCircleOnCanvas(
+        mapped.canvas,
+        mapped.x,
+        mapped.y,
+        (ctx.brush.size / 2) * mapped.scale,
+        ctx.brush.color,
+        ctx.brush.opacity,
+      );
+      ctx.doc.notify();
+      ctx.requestRender();
+      return;
+    }
+
     const started = beginStroke(e, ctx, false);
     if (!started) return;
+    this.mode = 'drawing';
     this.stroke = started.stroke;
     this.layerId = started.layerId;
   }
 
   pointerMove(e: PointerEventData, ctx: ToolContext): void {
+    if (this.mode === 'image' && this.imageCanvas && this.layerId) {
+      const layer = ctx.doc.getLayer(this.layerId);
+      if (!layer || layer.type !== 'image') return;
+      const mapped = docToImagePixels(layer, e.x, e.y);
+      if (!mapped) return;
+      const dist = Math.hypot(mapped.x - this.lastX, mapped.y - this.lastY);
+      const step = Math.max(1, ctx.brush.size * mapped.scale * 0.35);
+      const radius = (ctx.brush.size / 2) * mapped.scale;
+      if (dist < step) {
+        paintCircleOnCanvas(
+          mapped.canvas,
+          mapped.x,
+          mapped.y,
+          radius,
+          ctx.brush.color,
+          ctx.brush.opacity,
+        );
+      } else {
+        const steps = Math.ceil(dist / step);
+        for (let i = 1; i <= steps; i++) {
+          const t = i / steps;
+          paintCircleOnCanvas(
+            mapped.canvas,
+            this.lastX + (mapped.x - this.lastX) * t,
+            this.lastY + (mapped.y - this.lastY) * t,
+            radius,
+            ctx.brush.color,
+            ctx.brush.opacity,
+          );
+        }
+      }
+      this.lastX = mapped.x;
+      this.lastY = mapped.y;
+      ctx.doc.notify();
+      ctx.requestRender();
+      return;
+    }
+
     if (!this.stroke) return;
     this.stroke.points.push({ x: e.x, y: e.y, pressure: e.pressure });
     ctx.doc.notify();
@@ -326,7 +388,20 @@ export class BrushTool implements Tool {
   }
 
   pointerUp(_e: PointerEventData, ctx: ToolContext): void {
-    if (this.stroke && this.layerId) {
+    if (this.mode === 'image' && this.imageCanvas && this.layerId && this.beforePixels) {
+      const after = this.imageCanvas
+        .getContext('2d')!
+        .getImageData(0, 0, this.imageCanvas.width, this.imageCanvas.height);
+      ctx.history.execute(
+        new SetImagePixelsCommand(
+          ctx.doc,
+          this.layerId,
+          this.imageCanvas,
+          after,
+          this.beforePixels,
+        ),
+      );
+    } else if (this.stroke && this.layerId) {
       const layer = ctx.doc.getLayer(this.layerId) as DrawingLayer | undefined;
       if (layer) {
         const idx = layer.strokes.indexOf(this.stroke);
@@ -336,6 +411,9 @@ export class BrushTool implements Tool {
     }
     this.stroke = null;
     this.layerId = null;
+    this.mode = null;
+    this.imageCanvas = null;
+    this.beforePixels = null;
     ctx.requestRender();
   }
 }
@@ -354,17 +432,17 @@ export class EraserTool implements Tool {
   pointerDown(e: PointerEventData, ctx: ToolContext): void {
     if (!ctx.isFeatureEnabled('eraser')) return;
 
-    const target = resolveEraseTarget(ctx, e);
+    const target = getActivePaintLayer(ctx);
+    if (!target) return;
 
     if (e.altKey) {
       this.magicErase(e, ctx, target);
       return;
     }
 
-    if (target?.type === 'image') {
-      const mapped = docToImagePixels(target as ImageLayer, e.x, e.y);
+    if (target.type === 'image') {
+      const mapped = docToImagePixels(target, e.x, e.y);
       if (!mapped) return;
-      ctx.doc.setActiveLayer(target.id);
       this.mode = 'image';
       this.layerId = target.id;
       this.imageCanvas = mapped.canvas;
@@ -379,9 +457,6 @@ export class EraserTool implements Tool {
       return;
     }
 
-    if (target?.type === 'drawing') {
-      ctx.doc.setActiveLayer(target.id);
-    }
     const started = beginStroke(e, ctx, true);
     if (!started) return;
     this.mode = 'drawing';
@@ -392,11 +467,11 @@ export class EraserTool implements Tool {
   private magicErase(
     e: PointerEventData,
     ctx: ToolContext,
-    target: AnyLayer | null,
+    target: ImageLayer | DrawingLayer,
   ): void {
     try {
-      if (target?.type === 'image') {
-        const mapped = docToImagePixels(target as ImageLayer, e.x, e.y);
+      if (target.type === 'image') {
+        const mapped = docToImagePixels(target, e.x, e.y);
         if (!mapped) return;
         const { canvas } = mapped;
         const c2d = canvas.getContext('2d')!;
@@ -409,7 +484,6 @@ export class EraserTool implements Tool {
           if (mask.data[i + 3]! > 0) after.data[i + 3] = 0;
         }
         c2d.putImageData(after, 0, 0);
-        ctx.doc.setActiveLayer(target.id);
         ctx.history.execute(
           new SetImagePixelsCommand(ctx.doc, target.id, canvas, after, before),
         );
@@ -417,9 +491,10 @@ export class EraserTool implements Tool {
         return;
       }
 
+      const layer = ensureActiveRasterLayer(ctx);
+      if (!layer) return;
       const composite = captureComposite(ctx);
       const mask = magicWandSelectionMask(composite, e.x, e.y, 40);
-      const layer = ensureNamedRasterLayer(ctx, 'Magic erase');
       const before = layer.raster
         ? cloneImageData(layer.raster)
         : emptyImageData(ctx.doc.width, ctx.doc.height);
@@ -634,20 +709,112 @@ export class FillTool implements Tool {
   readonly cursor = 'cell';
 
   pointerDown(e: PointerEventData, ctx: ToolContext): void {
+    // 1. Shape layers: recolor the shape fill.
     const hit = ctx.doc.hitTest(e.x, e.y);
-    const target =
+    const shapeTarget =
       hit?.type === 'shape'
         ? hit
         : ctx.doc.getActiveLayer()?.type === 'shape'
           ? ctx.doc.getActiveLayer()
           : null;
-    if (!target || target.type !== 'shape') return;
-    const shape = target as ShapeLayer;
-    if (shape.fill === ctx.fillColor) return;
-    ctx.doc.setActiveLayer(shape.id);
-    ctx.history.execute(
-      new UpdateLayerPropsCommand(ctx.doc, shape.id, { fill: ctx.fillColor }),
-    );
+    if (shapeTarget?.type === 'shape') {
+      const shape = shapeTarget as ShapeLayer;
+      if (shape.fill === ctx.fillColor) return;
+      ctx.doc.setActiveLayer(shape.id);
+      ctx.history.execute(
+        new UpdateLayerPropsCommand(ctx.doc, shape.id, { fill: ctx.fillColor }),
+      );
+      ctx.requestRender();
+      return;
+    }
+
+    // 2. Paint-bucket on the active image / drawing layer.
+    const layer = getActivePaintLayer(ctx);
+    if (!layer) return;
+    const [r, g, b] = parseCssColor(ctx.fillColor);
+    const selMask = ctx.doc.selection.mask;
+
+    if (layer.type === 'image') {
+      const mapped = docToImagePixels(layer, e.x, e.y);
+      if (!mapped) return;
+      const c2d = mapped.canvas.getContext('2d')!;
+      const before = c2d.getImageData(0, 0, mapped.canvas.width, mapped.canvas.height);
+      const after = cloneImageData(before);
+      const t = layer.transform;
+      let changed = false;
+      if (selMask && t.rotation === 0) {
+        // Fill the selected doc-space region mapped into image pixels.
+        for (let py = 0; py < after.height; py++) {
+          const dy = Math.round(t.y + ((py + 0.5) / after.height) * t.height);
+          if (dy < 0 || dy >= selMask.height) continue;
+          for (let px = 0; px < after.width; px++) {
+            const dx = Math.round(t.x + ((px + 0.5) / after.width) * t.width);
+            if (dx < 0 || dx >= selMask.width) continue;
+            if (selMask.data[(dy * selMask.width + dx) * 4 + 3]! === 0) continue;
+            const i = (py * after.width + px) * 4;
+            after.data[i] = r!;
+            after.data[i + 1] = g!;
+            after.data[i + 2] = b!;
+            after.data[i + 3] = 255;
+            changed = true;
+          }
+        }
+      } else {
+        const mask = magicWandSelectionMask(before, mapped.x, mapped.y, 32, true);
+        for (let i = 0; i < mask.data.length; i += 4) {
+          if (mask.data[i + 3]! === 0) continue;
+          after.data[i] = r!;
+          after.data[i + 1] = g!;
+          after.data[i + 2] = b!;
+          after.data[i + 3] = 255;
+          changed = true;
+        }
+      }
+      if (!changed) return;
+      c2d.putImageData(after, 0, 0);
+      ctx.history.execute(
+        new SetImagePixelsCommand(ctx.doc, layer.id, mapped.canvas, after, before),
+      );
+      ctx.requestRender();
+      return;
+    }
+
+    // Drawing layer: fill into its raster buffer (doc-sized).
+    const draw = ensureActiveRasterLayer(ctx);
+    if (!draw?.raster) return;
+    const before = cloneImageData(draw.raster);
+    const after = cloneImageData(before);
+    const w = after.width;
+    const setPx = (i: number) => {
+      after.data[i] = r!;
+      after.data[i + 1] = g!;
+      after.data[i + 2] = b!;
+      after.data[i + 3] = 255;
+    };
+    if (selMask) {
+      for (let i = 0; i < selMask.data.length; i += 4) {
+        if (selMask.data[i + 3]! > 0) setPx(i);
+      }
+    } else {
+      const sx = Math.max(0, Math.min(w - 1, Math.round(e.x)));
+      const sy = Math.max(0, Math.min(after.height - 1, Math.round(e.y)));
+      const seedAlpha = after.data[(sy * w + sx) * 4 + 3]!;
+      if (seedAlpha === 0) {
+        // Empty area: flood the connected transparent region.
+        const mask = magicWandSelectionMask(after, sx, sy, 32, true);
+        for (let i = 0; i < mask.data.length; i += 4) {
+          if (mask.data[i + 3]! > 0) setPx(i);
+        }
+      } else {
+        const mask = magicWandSelectionMask(after, sx, sy, 32);
+        for (let i = 0; i < mask.data.length; i += 4) {
+          if (mask.data[i + 3]! > 0) setPx(i);
+        }
+      }
+    }
+    draw.raster = after;
+    ctx.history.execute(new SetRasterCommand(ctx.doc, draw.id, after, before));
+    ctx.doc.notify();
     ctx.requestRender();
   }
   pointerMove(): void {}
@@ -744,29 +911,51 @@ class StampRetouchToolBase {
   protected lastY = 0;
   protected mode: 'clone' | 'heal' = 'clone';
   protected feature = 'cloneStamp';
+  /** Image-layer mode state (stamping directly into the image pixels). */
+  protected imageCanvas: HTMLCanvasElement | null = null;
+  protected imageSnapshot: ImageData | null = null;
+  protected imageWorking: ImageData | null = null;
+  protected imageBefore: ImageData | null = null;
 
   protected pointerDownImpl(e: PointerEventData, ctx: ToolContext): void {
     if (!ctx.isFeatureEnabled(this.feature)) return;
 
     if (e.altKey) {
       this.source = { x: e.x, y: e.y };
-      try {
-        this.snapshot = captureComposite(ctx);
-      } catch {
-        this.snapshot = null;
-      }
+      this.snapshot = null;
       ctx.requestRender();
       return;
     }
 
     if (!this.source) return;
-    try {
-      this.snapshot = this.snapshot ?? captureComposite(ctx);
-    } catch {
+
+    const target = getActivePaintLayer(ctx);
+    if (!target) return;
+
+    if (target.type === 'image') {
+      const mapped = docToImagePixels(target, e.x, e.y);
+      if (!mapped) return;
+      const c2d = mapped.canvas.getContext('2d')!;
+      this.layerId = target.id;
+      this.imageCanvas = mapped.canvas;
+      this.imageBefore = c2d.getImageData(0, 0, mapped.canvas.width, mapped.canvas.height);
+      this.imageSnapshot = cloneImageData(this.imageBefore);
+      this.imageWorking = cloneImageData(this.imageBefore);
+      this.originDest = { x: e.x, y: e.y };
+      this.dragging = true;
+      this.lastX = e.x;
+      this.lastY = e.y;
+      this.stampAt(e.x, e.y, ctx);
       return;
     }
 
-    const layer = ensureNamedRasterLayer(ctx, this.mode === 'heal' ? 'Healing' : 'Clone');
+    try {
+      this.snapshot = captureComposite(ctx);
+    } catch {
+      return;
+    }
+    const layer = ensureActiveRasterLayer(ctx);
+    if (!layer) return;
     this.layerId = layer.id;
     this.beforeRaster = layer.raster
       ? cloneImageData(layer.raster)
@@ -780,11 +969,35 @@ class StampRetouchToolBase {
   }
 
   protected stampAt(x: number, y: number, ctx: ToolContext): void {
-    if (!this.source || !this.snapshot || !this.layerId || !this.originDest) return;
-    const layer = ctx.doc.getLayer(this.layerId) as DrawingLayer | undefined;
-    if (!layer?.raster) return;
+    if (!this.source || !this.layerId || !this.originDest) return;
     const dx = this.source.x - this.originDest.x;
     const dy = this.source.y - this.originDest.y;
+
+    if (this.imageCanvas && this.imageWorking && this.imageSnapshot) {
+      const layer = ctx.doc.getLayer(this.layerId);
+      if (!layer || layer.type !== 'image') return;
+      const dest = docToImagePixels(layer, x, y);
+      const src = docToImagePixels(layer, x + dx, y + dy);
+      if (!dest || !src) return;
+      stampCircle(
+        this.imageWorking,
+        this.imageSnapshot,
+        dest.x,
+        dest.y,
+        src.x,
+        src.y,
+        (ctx.brush.size / 2) * dest.scale,
+        this.mode,
+      );
+      this.imageCanvas.getContext('2d')!.putImageData(this.imageWorking, 0, 0);
+      ctx.doc.notify();
+      ctx.requestRender();
+      return;
+    }
+
+    if (!this.snapshot) return;
+    const layer = ctx.doc.getLayer(this.layerId) as DrawingLayer | undefined;
+    if (!layer?.raster) return;
     stampCircle(
       layer.raster,
       this.snapshot,
@@ -819,22 +1032,38 @@ class StampRetouchToolBase {
 
   pointerUp(_e: PointerEventData, ctx: ToolContext): void {
     if (this.dragging && this.layerId) {
-      const layer = ctx.doc.getLayer(this.layerId) as DrawingLayer | undefined;
-      if (layer?.raster) {
+      if (this.imageCanvas && this.imageWorking && this.imageBefore) {
         ctx.history.execute(
-          new SetRasterCommand(
+          new SetImagePixelsCommand(
             ctx.doc,
             this.layerId,
-            cloneImageData(layer.raster),
-            this.beforeRaster,
+            this.imageCanvas,
+            cloneImageData(this.imageWorking),
+            this.imageBefore,
           ),
         );
+      } else {
+        const layer = ctx.doc.getLayer(this.layerId) as DrawingLayer | undefined;
+        if (layer?.raster) {
+          ctx.history.execute(
+            new SetRasterCommand(
+              ctx.doc,
+              this.layerId,
+              cloneImageData(layer.raster),
+              this.beforeRaster,
+            ),
+          );
+        }
       }
     }
     this.dragging = false;
     this.layerId = null;
     this.beforeRaster = null;
     this.originDest = null;
+    this.imageCanvas = null;
+    this.imageSnapshot = null;
+    this.imageWorking = null;
+    this.imageBefore = null;
     ctx.requestRender();
   }
 

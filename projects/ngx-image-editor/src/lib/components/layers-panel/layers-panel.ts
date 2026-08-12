@@ -12,7 +12,28 @@ import type { AnyLayer } from '../../engine/layers/types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="ngx-nie__panel">
-      <div class="ngx-nie__panel-header">Layers</div>
+      <div class="ngx-nie__panel-header ngx-nie__panel-header--row">
+        <span>Layers</span>
+        <span class="ngx-nie__panel-header-actions">
+          <button
+            type="button"
+            class="ngx-nie__btn ngx-nie__btn--icon ngx-nie__layer-action"
+            title="New layer"
+            (click)="add.emit()"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            class="ngx-nie__btn ngx-nie__btn--icon ngx-nie__layer-action ngx-nie__layer-action--danger"
+            title="Delete all layers"
+            [disabled]="layers().length === 0"
+            (click)="clearAll.emit()"
+          >
+            🗑
+          </button>
+        </span>
+      </div>
       <div class="ngx-nie__panel-body">
         @for (layer of layersReversed(); track layer.id) {
           <div
@@ -56,6 +77,8 @@ export class NieLayersPanelComponent {
   readonly toggleVisible = output<string>();
   readonly duplicate = output<void>();
   readonly remove = output<string>();
+  readonly add = output<void>();
+  readonly clearAll = output<void>();
 
   layersReversed(): AnyLayer[] {
     return [...this.layers()].reverse();

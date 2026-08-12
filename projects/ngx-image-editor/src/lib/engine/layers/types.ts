@@ -299,14 +299,33 @@ export function createAdjustmentLayer(
 }
 
 export function cloneLayer(layer: AnyLayer): AnyLayer {
-  const copy = structuredClone({
+  const base = {
     ...layer,
     id: createLayerId(layer.type.slice(0, 3)),
     name: `${layer.name} copy`,
-  }) as AnyLayer;
-  if (layer.type === 'image') {
-    (copy as ImageLayer).source = layer.source;
-    (copy as ImageLayer).objectUrl = layer.objectUrl;
+  };
+  if (base.type === 'image') {
+    // DOM nodes (img / canvas sources) cannot pass through structuredClone.
+    (base as Partial<ImageLayer>).source = null;
+    delete (base as Partial<ImageLayer>).objectUrl;
+  }
+  const copy = structuredClone(base) as AnyLayer;
+  if (layer.type === 'image' && layer.source) {
+    // Deep-copy the pixels so the duplicate can be edited independently.
+    const src = layer.source;
+    const w =
+      src instanceof HTMLImageElement
+        ? src.naturalWidth || src.width
+        : (src as { width: number }).width;
+    const h =
+      src instanceof HTMLImageElement
+        ? src.naturalHeight || src.height
+        : (src as { height: number }).height;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Number(w));
+    canvas.height = Math.max(1, Number(h));
+    canvas.getContext('2d')!.drawImage(src, 0, 0);
+    (copy as ImageLayer).source = canvas;
   }
   return copy;
 }

@@ -146,6 +146,7 @@ export function magicWandSelectionMask(
   seedX: number,
   seedY: number,
   tolerance = 32,
+  allowTransparentSeed = false,
 ): ImageData {
   const { width, height, data } = source;
   const mask = new Uint8ClampedArray(width * height * 4);
@@ -156,7 +157,7 @@ export function magicWandSelectionMask(
   const sg = data[seedI + 1]!;
   const sb = data[seedI + 2]!;
   const sa = data[seedI + 3]!;
-  if (sa === 0) return new ImageData(mask, width, height);
+  if (sa === 0 && !allowTransparentSeed) return new ImageData(mask, width, height);
 
   const visited = new Uint8Array(width * height);
   const stack: number[] = [x0, y0];

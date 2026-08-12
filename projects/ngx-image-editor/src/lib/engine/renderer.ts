@@ -7,7 +7,45 @@ import type {
   TextLayer,
 } from './layers/types';
 import { filterCanvasSource } from './filters/apply';
-import { selectionBounds } from './selection';
+
+/**
+ * Build a marching-ants outline of the selection mask edge (not its bounding
+ * box), so ellipse / lasso / magic-wand selections show their real shape.
+ */
+function selectionOutlineCanvas(mask: ImageData): HTMLCanvasElement | null {
+  const { width, height, data } = mask;
+  const out = new Uint8ClampedArray(width * height * 4);
+  const selected = (x: number, y: number): boolean =>
+    x >= 0 && y >= 0 && x < width && y < height && data[(y * width + x) * 4 + 3]! > 0;
+  let any = false;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!selected(x, y)) continue;
+      if (selected(x - 1, y) && selected(x + 1, y) && selected(x, y - 1) && selected(x, y + 1)) {
+        continue;
+      }
+      any = true;
+      const i = (y * width + x) * 4;
+      // 4px alternating dashes for the classic marching-ants look.
+      if (((x + y) >> 2) & 1) {
+        out[i] = 255;
+        out[i + 1] = 255;
+        out[i + 2] = 255;
+      } else {
+        out[i] = 15;
+        out[i + 1] = 23;
+        out[i + 2] = 42;
+      }
+      out[i + 3] = 255;
+    }
+  }
+  if (!any) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  canvas.getContext('2d')!.putImageData(new ImageData(out, width, height), 0, 0);
+  return canvas;
+}
 
 function drawShape(ctx: CanvasRenderingContext2D, layer: ShapeLayer): void {
   const { width, height, shape, fill, stroke, strokeWidth, sides } = {
@@ -285,17 +323,11 @@ export function renderDocument(
   }
 
   if (options.showOverlay) {
-    const bounds = selectionBounds(doc.selection);
-    if (bounds) {
-      ctx.save();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1 / scale;
-      ctx.setLineDash([4 / scale, 4 / scale]);
-      ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineDashOffset = 4 / scale;
-      ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
-      ctx.restore();
+    if (doc.selection.mask) {
+      const outline = selectionOutlineCanvas(doc.selection.mask);
+      if (outline) {
+        ctx.drawImage(outline, 0, 0);
+      }
     }
 
     const active = doc.getActiveLayer();

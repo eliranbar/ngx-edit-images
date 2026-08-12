@@ -74,9 +74,10 @@ if (existsSync(privPath)) {
   process.exit(1);
 }
 
+// Empty --features with plan premium/pro unlocks all current PREMIUM_FEATURES at runtime.
 const features = (
   args.features ??
-  'brush,eraser,masks,groups,blendModes,advancedSelection,cloneStamp,healing,perspective,warp,layerStyles,adjustmentLayers,nonDestructiveFilters,extendedFilters,exportSvg'
+  'brush,eraser,masks,groups,blendModes,advancedSelection,cloneStamp,healing,perspective,warp,layerStyles,adjustmentLayers,nonDestructiveFilters,extendedFilters,exportSvg,pdf,psd,raw,colorManagement'
 )
   .split(',')
   .map((f) => f.trim())

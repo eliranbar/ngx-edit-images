@@ -320,6 +320,19 @@ ngx-nie-properties-panel {
   border-bottom: 1px solid var(--nie-border);
 }
 
+.ngx-nie__panel-header--row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ngx-nie__panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .ngx-nie__panel-body {
   padding: 8px;
 }
@@ -484,6 +497,38 @@ ngx-nie-properties-panel {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 14px;
+}
+
+.ngx-nie__pdf-meta {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--nie-muted);
+}
+
+.ngx-nie__pdf-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ngx-nie__pdf-range input {
+  width: 72px;
+  background: var(--nie-surface-elevated);
+  border: 1px solid var(--nie-border);
+  color: var(--nie-text);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.ngx-nie__pdf-error {
+  margin: 0 0 8px;
+  color: var(--nie-danger);
+  font-size: 12px;
+}
+
+.ngx-nie__menubar .premium-locked {
+  opacity: 0.55;
 }
 
 .ngx-nie__kbd {

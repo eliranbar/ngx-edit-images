@@ -7,6 +7,8 @@ Professional Angular image editor with layers, filters, drawing, and a
 
 ```bash
 npm install @ebdev/ngx-image-editor
+# Optional — required only for premium PDF import
+npm install pdfjs-dist
 ```
 
 Import styles once in your app:
@@ -70,6 +72,7 @@ export class EditorPage {
 | Perspective / warp | | ✓ |
 | Layer styles, adjustment layers | | ✓ |
 | Extended filters, SVG export | | ✓ |
+| PDF import (pages as images) | | ✓ |
 | PSD / RAW / color management | | ✓ (phase 3) |
 
 ## Keyboard shortcuts

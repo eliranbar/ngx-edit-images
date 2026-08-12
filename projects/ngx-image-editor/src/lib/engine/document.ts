@@ -144,6 +144,39 @@ export class EditorDocument {
     this.notify();
   }
 
+  /** Remove every layer at once; returns a snapshot for undo. */
+  clearAllLayers(): {
+    layers: AnyLayer[];
+    rootOrder: string[];
+    activeLayerId: string | null;
+  } {
+    const snapshot = {
+      layers: Array.from(this.layers.values()),
+      rootOrder: [...this.rootOrder],
+      activeLayerId: this.activeLayerId,
+    };
+    this.layers.clear();
+    this.rootOrder = [];
+    this.activeLayerId = null;
+    this.selection = createEmptySelection();
+    this.notify();
+    return snapshot;
+  }
+
+  restoreAllLayers(snapshot: {
+    layers: AnyLayer[];
+    rootOrder: string[];
+    activeLayerId: string | null;
+  }): void {
+    this.layers.clear();
+    for (const layer of snapshot.layers) {
+      this.layers.set(layer.id, layer);
+    }
+    this.rootOrder = [...snapshot.rootOrder];
+    this.activeLayerId = snapshot.activeLayerId;
+    this.notify();
+  }
+
   updateLayer(id: string, patch: Partial<AnyLayer>): void {
     const layer = this.layers.get(id);
     if (!layer) return;
