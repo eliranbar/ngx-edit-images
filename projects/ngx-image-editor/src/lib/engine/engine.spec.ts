@@ -5,6 +5,9 @@ import { EditorDocument } from './document';
 import { createShapeLayer, defaultTransform } from './layers/types';
 import { AddLayerCommand, TransformLayerCommand } from './commands';
 import { ShortcutRegistry, DEFAULT_SHORTCUTS } from './shortcuts';
+import { isAltModifier, resolveModifierHints, setMacPlatformOverride } from './platform';
+import { ZoomTool } from './tools/view';
+import type { ToolContext } from './tools/tool';
 import { applyFilters } from './filters/apply';
 import { createFilter } from './filters/types';
 import { rectSelectionMask } from './selection';
@@ -115,6 +118,71 @@ describe('ShortcutRegistry', () => {
   it('exposes default bindings', () => {
     expect(DEFAULT_SHORTCUTS['edit.cut'].key).toBe('x');
     expect(DEFAULT_SHORTCUTS['edit.cut'].mod).toBe(true);
+  });
+
+  it('matches the Mac alternate as well as the primary chord', () => {
+    const registry = new ShortcutRegistry();
+    expect(registry.match(new KeyboardEvent('keydown', { key: 't', metaKey: true }))).toBe(
+      'tool.transform',
+    );
+    expect(registry.match(new KeyboardEvent('keydown', { key: 'f' }))).toBe('tool.transform');
+    expect(registry.match(new KeyboardEvent('keydown', { key: 'Escape' }))).toBe('edit.deselect');
+  });
+
+  it('falls back to the physical key when macOS rewrites Option combos', () => {
+    const registry = new ShortcutRegistry({
+      'tool.brush': { key: 'b', alt: true, label: 'Alt+B' },
+    });
+    const optionB = new KeyboardEvent('keydown', { key: '∫', code: 'KeyB', altKey: true });
+    expect(registry.match(optionB)).toBe('tool.brush');
+  });
+
+  it('shows the Mac alternate in labels on macOS only', () => {
+    const registry = new ShortcutRegistry();
+    expect(registry.label('tool.transform', false)).toBe('Ctrl+T');
+    expect(registry.label('tool.transform', true)).toBe('F');
+    expect(registry.label('edit.undo', true)).toBe('⌘Z');
+  });
+});
+
+describe('platform modifiers', () => {
+  it('treats ⌘ as the alt modifier on macOS only', () => {
+    const cmdClick = { altKey: false, metaKey: true };
+    expect(isAltModifier(cmdClick, true)).toBe(true);
+    expect(isAltModifier(cmdClick, false)).toBe(false);
+    expect(isAltModifier({ altKey: true, metaKey: false }, false)).toBe(true);
+  });
+
+  it('zooms out on ⌘-click when running on macOS', () => {
+    setMacPlatformOverride(true);
+    try {
+      const doc = new EditorDocument();
+      const ctx = { doc, requestRender: () => {} } as unknown as ToolContext;
+      const cmdClick = {
+        x: 0,
+        y: 0,
+        screenX: 0,
+        screenY: 0,
+        button: 0,
+        shiftKey: false,
+        altKey: false,
+        metaKey: true,
+        pressure: 1,
+      };
+      new ZoomTool().pointerDown(cmdClick, ctx);
+      expect(doc.viewport.zoom).toBeLessThan(1);
+    } finally {
+      setMacPlatformOverride(null);
+    }
+  });
+
+  it('renders modifier hints per platform', () => {
+    expect(resolveModifierHints('{altClick} to set source.', false)).toBe(
+      'Alt-click to set source.',
+    );
+    expect(resolveModifierHints('{altClick} to set source.', true)).toBe(
+      '⌥-click (or ⌘-click) to set source.',
+    );
   });
 });
 

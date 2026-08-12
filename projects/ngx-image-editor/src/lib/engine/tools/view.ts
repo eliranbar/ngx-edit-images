@@ -1,5 +1,6 @@
 import type { Tool, ToolContext, PointerEventData } from './tool';
 import { CropCommand } from '../commands';
+import { isAltModifier } from '../platform';
 
 export class CropTool implements Tool {
   readonly id = 'crop' as const;
@@ -99,7 +100,7 @@ export class ZoomTool implements Tool {
   readonly cursor = 'zoom-in';
 
   pointerDown(e: PointerEventData, ctx: ToolContext): void {
-    const factor = e.altKey ? 1 / 1.25 : 1.25;
+    const factor = isAltModifier(e) ? 1 / 1.25 : 1.25;
     const zoom = Math.max(0.1, Math.min(8, ctx.doc.viewport.zoom * factor));
     ctx.doc.setViewport({ zoom });
     ctx.requestRender();

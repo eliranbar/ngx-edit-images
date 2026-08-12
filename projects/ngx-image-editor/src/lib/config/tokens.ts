@@ -41,6 +41,11 @@ export interface ImageEditorConfig {
   /** Background color behind transparent areas. */
   canvasBackground?: string;
   /**
+   * URL of the AVIF encoder WASM asset.
+   * Defaults to `assets/ngx-image-editor/avif_enc.wasm`.
+   */
+  avifWasmUrl?: string;
+  /**
    * pdf.js worker URL for premium PDF import.
    * Defaults to a CDN build matching the installed pdfjs-dist version.
    */

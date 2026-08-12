@@ -33,8 +33,26 @@ export type { ContextMenuItem } from './lib/components/context-menu/context-menu
 export { ImageEditorEngine } from './lib/engine/engine';
 export { EditorDocument } from './lib/engine/document';
 export { HistoryStack } from './lib/engine/history';
-export { ShortcutRegistry, DEFAULT_SHORTCUTS, formatShortcutLabel } from './lib/engine/shortcuts';
-export type { ShortcutAction, ShortcutBinding, ShortcutOverrides } from './lib/engine/shortcuts';
+export {
+  ShortcutRegistry,
+  DEFAULT_SHORTCUTS,
+  formatShortcutLabel,
+  shortcutChords,
+} from './lib/engine/shortcuts';
+export type {
+  ShortcutAction,
+  ShortcutBinding,
+  ShortcutChord,
+  ShortcutOverrides,
+} from './lib/engine/shortcuts';
+export {
+  isMacPlatform,
+  setMacPlatformOverride,
+  isAltModifier,
+  altClickLabel,
+  altDragLabel,
+  resolveModifierHints,
+} from './lib/engine/platform';
 export { exportDocument, downloadExport } from './lib/engine/export';
 export type { ExportOptions, ExportResult, ExportFormat } from './lib/engine/export';
 export {

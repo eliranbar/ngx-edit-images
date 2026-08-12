@@ -28,6 +28,7 @@ import {
   emptyImageData,
 } from '../selection';
 import { renderDocument } from '../renderer';
+import { isAltModifier } from '../platform';
 import type { PixelSelection } from '../selection';
 
 export class TextTool implements Tool {
@@ -435,7 +436,7 @@ export class EraserTool implements Tool {
     const target = getActivePaintLayer(ctx);
     if (!target) return;
 
-    if (e.altKey) {
+    if (isAltModifier(e)) {
       this.magicErase(e, ctx, target);
       return;
     }
@@ -920,7 +921,7 @@ class StampRetouchToolBase {
   protected pointerDownImpl(e: PointerEventData, ctx: ToolContext): void {
     if (!ctx.isFeatureEnabled(this.feature)) return;
 
-    if (e.altKey) {
+    if (isAltModifier(e)) {
       this.source = { x: e.x, y: e.y };
       this.snapshot = null;
       ctx.requestRender();

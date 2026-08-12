@@ -21,6 +21,7 @@ import type { ExportFormat, ExportResult } from '../../engine/export';
 import type { AnyLayer, BlendMode, ShapeKind, TextLayer } from '../../engine/layers/types';
 import type { FilterDescriptor } from '../../engine/filters/types';
 import { isPdfFile } from '../../engine/pdf-import';
+import { isMacPlatform } from '../../engine/platform';
 import {
   SetOpacityCommand,
   SetBlendModeCommand,
@@ -243,35 +244,61 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
     </div>
 
     @if (showExport()) {
-      <div class="ngx-nie__export-dialog" (click)="showExport.set(false)">
+      <div class="ngx-nie__export-dialog" (click)="closeExport()">
         <div class="ngx-nie__export-card" (click)="$event.stopPropagation()">
-          <h3>Export</h3>
+          <h3>Export image</h3>
+          <div class="ngx-nie__field">
+            <label>File name</label>
+            <div class="ngx-nie__filename">
+              <input
+                type="text"
+                [value]="exportFilename()"
+                (input)="exportFilename.set($any($event.target).value)"
+              />
+              <span>.{{ exportExtension() }}</span>
+            </div>
+          </div>
           <div class="ngx-nie__field">
             <label>Format</label>
             <select [value]="exportFormat()" (change)="exportFormat.set($any($event.target).value)">
               <option value="png">PNG</option>
               <option value="jpeg">JPEG</option>
               <option value="webp">WebP</option>
+              <option value="avif">AVIF</option>
+              <option value="gif">GIF (single frame)</option>
+              <option value="tiff">TIFF</option>
               @if (isFeatureEnabled(NIE_FEATURES.exportSvg)) {
                 <option value="svg">SVG (Premium)</option>
               }
             </select>
           </div>
-          <div class="ngx-nie__field">
-            <label>Quality ({{ exportQuality() }})</label>
-            <input
-              type="range"
-              min="0.1"
-              max="1"
-              step="0.05"
-              [value]="exportQuality()"
-              (input)="exportQuality.set(+$any($event.target).value)"
-            />
-          </div>
+          @if (exportHasQuality()) {
+            <div class="ngx-nie__field">
+              <label>Quality ({{ exportQuality() }})</label>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.05"
+                [value]="exportQuality()"
+                (input)="exportQuality.set(+$any($event.target).value)"
+              />
+            </div>
+          }
+          @if (exportError()) {
+            <p class="ngx-nie__pdf-error">{{ exportError() }}</p>
+          }
           <div class="ngx-nie__export-actions">
-            <button type="button" class="ngx-nie__btn" (click)="showExport.set(false)">Cancel</button>
-            <button type="button" class="ngx-nie__btn ngx-nie__btn--primary" (click)="doExport()">
-              Download
+            <button type="button" class="ngx-nie__btn" (click)="closeExport()" [disabled]="exporting()">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="ngx-nie__btn ngx-nie__btn--primary"
+              (click)="doExport()"
+              [disabled]="exporting()"
+            >
+              {{ exporting() ? 'Exporting…' : 'Download' }}
             </button>
           </div>
         </div>
@@ -366,11 +393,23 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
   engine!: ImageEditorEngine;
 
   readonly revision = signal(0);
+  /** Flips once the engine exists, so shortcut labels can come from its registry. */
+  private readonly engineReady = signal(false);
   readonly activeTool = signal<NieToolId>('move');
   readonly dragging = signal(false);
   readonly showExport = signal(false);
   readonly exportFormat = signal<ExportFormat>('png');
   readonly exportQuality = signal(0.92);
+  readonly exportFilename = signal('export');
+  readonly exporting = signal(false);
+  readonly exportError = signal<string | null>(null);
+  readonly exportHasQuality = computed(() =>
+    ['jpeg', 'webp', 'avif'].includes(this.exportFormat()),
+  );
+  readonly exportExtension = computed(() => {
+    const format = this.exportFormat();
+    return format === 'jpeg' ? 'jpg' : format === 'tiff' ? 'tif' : format;
+  });
   readonly brushColor = signal('#5b8def');
   readonly brushSize = signal(12);
   readonly shapeKind = signal<ShapeKind>('rect');
@@ -442,8 +481,9 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
   });
 
   readonly toolbarItems = computed((): ToolbarItem[] => {
+    this.engineReady();
     const allowed = new Set(this.config.tools ?? DEFAULT_TOOLS);
-    const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+    const isMac = isMacPlatform();
     return DEFAULT_TOOLBAR_ITEMS.filter((i) => allowed.has(i.id)).map((item) => {
       const action = toolToShortcut(item.id);
       const label = action && this.engine
@@ -490,6 +530,7 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
       isFeatureEnabled: (f) => this.features?.isEnabled(f as NieFeatureId) ?? this.enabledFeatures().has(f as NieFeatureId),
     });
 
+    this.engineReady.set(true);
     this.engine.openFilePicker = () => this.fileInputRef.nativeElement.click();
     this.engine.openExport = () => this.showExport.set(true);
 
@@ -538,8 +579,7 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
 
   shortcutLabel(action: Parameters<ImageEditorEngine['shortcuts']['label']>[0]): string {
     if (!this.engine) return '';
-    const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
-    return this.engine.shortcuts.label(action, isMac);
+    return this.engine.shortcuts.label(action, isMacPlatform());
   }
 
   selectTool(id: NieToolId): void {
@@ -822,12 +862,33 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
     if (format === 'svg' && !this.features?.require(NIE_FEATURES.exportSvg)) {
       return;
     }
-    const result = await this.engine.exportAndDownload({
-      format,
-      quality: this.exportQuality(),
-    });
-    this.exported.emit(result);
-    this.showExport.set(false);
+    const baseName =
+      this.exportFilename()
+        .trim()
+        .replace(/\.(?:png|jpe?g|webp|avif|gif|tiff?|svg)$/i, '') || 'export';
+    this.exporting.set(true);
+    this.exportError.set(null);
+    try {
+      const result = await this.engine.exportAndDownload({
+        format,
+        quality: this.exportQuality(),
+        filename: `${baseName}.${this.exportExtension()}`,
+        avifWasmUrl: this.config.avifWasmUrl,
+      });
+      this.exported.emit(result);
+      this.showExport.set(false);
+    } catch (error) {
+      this.exportError.set(error instanceof Error ? error.message : 'Export failed');
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  closeExport(): void {
+    if (!this.exporting()) {
+      this.exportError.set(null);
+      this.showExport.set(false);
+    }
   }
 
   private toPointer(event: PointerEvent | MouseEvent) {

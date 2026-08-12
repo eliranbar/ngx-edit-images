@@ -24,7 +24,7 @@ export class App {
     { name: 'Text & shapes', tier: 'Free', desc: 'Rect, ellipse, line, arrow, polygon, star.' },
     { name: 'Basic filters', tier: 'Free', desc: 'Brightness, contrast, saturation, blur, and more.' },
     { name: 'Guides, grid, alignment', tier: 'Free', desc: 'Snap while you design.' },
-    { name: 'PNG / JPEG / WebP export', tier: 'Free', desc: 'Download your composition.' },
+    { name: 'PNG / JPEG / WebP / AVIF / GIF / TIFF export', tier: 'Free', desc: 'Download your composition.' },
     { name: 'Brush & eraser', tier: 'Premium', desc: 'Freehand drawing with pressure points.' },
     { name: 'Masks & groups', tier: 'Premium', desc: 'Non-destructive organization.' },
     { name: 'Blend modes', tier: 'Premium', desc: 'Multiply, screen, overlay, and more.' },

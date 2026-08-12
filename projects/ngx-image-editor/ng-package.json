@@ -1,12 +1,24 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/ngx-image-editor",
-  "allowedNonPeerDependencies": ["@noble/ed25519", "@noble/hashes", "pdfjs-dist"],
+  "allowedNonPeerDependencies": [
+    "@jsquash/avif",
+    "@noble/ed25519",
+    "@noble/hashes",
+    "gifenc",
+    "pdfjs-dist",
+    "utif"
+  ],
   "assets": [
     {
       "input": "src/lib/styles",
       "glob": "styles.css",
       "output": "."
+    },
+    {
+      "input": "src/lib/engine/codecs",
+      "glob": "*.wasm",
+      "output": "assets"
     }
   ],
   "lib": {

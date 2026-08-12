@@ -54,6 +54,11 @@
               {
                 "glob": "**/*",
                 "input": "projects/demo/public"
+              },
+              {
+                "glob": "*.wasm",
+                "input": "projects/ngx-image-editor/src/lib/engine/codecs",
+                "output": "assets/ngx-image-editor"
               }
             ],
             "styles": ["projects/demo/src/styles.scss"]

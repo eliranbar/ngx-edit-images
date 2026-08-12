@@ -409,6 +409,21 @@ ngx-nie-properties-panel {
   width: 100%;
 }
 
+.ngx-nie__filename {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ngx-nie__filename input {
+  min-width: 0;
+  flex: 1;
+}
+
+.ngx-nie__filename span {
+  color: var(--nie-muted);
+}
+
 .ngx-nie__field input[type='color'],
 .ngx-nie__field input[type='text'],
 .ngx-nie__field select {

@@ -7,11 +7,15 @@ import {
 } from '@angular/core';
 import type { NieToolId } from '../../config/tokens';
 import { NIE_FEATURES, type NieFeatureId } from '../../config/features';
+import { isMacPlatform, resolveModifierHints } from '../../engine/platform';
 
 export interface ToolbarItem {
   id: NieToolId;
   label: string;
-  /** Short description shown in the tooltip. */
+  /**
+   * Short description shown in the tooltip. May contain the `{altClick}` /
+   * `{altDrag}` placeholders, which are rendered with platform-specific wording.
+   */
   description: string;
   icon: string;
   shortcut: string;
@@ -40,7 +44,7 @@ export interface ToolbarItem {
           [class.active]="item.id === activeTool()"
           [class.premium-locked]="item.premium && !isEnabled(item)"
           [attr.aria-label]="item.label"
-          [attr.aria-description]="item.description"
+          [attr.aria-description]="describe(item)"
           [attr.aria-pressed]="item.id === activeTool()"
           (mouseenter)="showTip($event, item)"
           (mouseleave)="hideTip()"
@@ -80,9 +84,15 @@ export class NieToolbarComponent {
     body: string;
   } | null>(null);
 
+  private readonly isMac = isMacPlatform();
+
   isEnabled(item: ToolbarItem): boolean {
     if (!item.feature) return true;
     return this.enabledFeatures().has(item.feature);
+  }
+
+  describe(item: ToolbarItem): string {
+    return resolveModifierHints(item.description, this.isMac);
   }
 
   tipTitle(item: ToolbarItem): string {
@@ -98,7 +108,7 @@ export class NieToolbarComponent {
       top: rect.top + rect.height / 2,
       left: rect.right + 10,
       title: this.tipTitle(item),
-      body: item.description,
+      body: this.describe(item),
     });
   }
 
@@ -152,7 +162,7 @@ export const DEFAULT_TOOLBAR_ITEMS: ToolbarItem[] = [
   {
     id: 'zoom',
     label: 'Zoom',
-    description: 'Click to zoom in. Alt-click to zoom out.',
+    description: 'Click to zoom in. {altClick} to zoom out.',
     icon: '🔍',
     shortcut: 'Z',
     feature: NIE_FEATURES.zoomPan,
@@ -185,7 +195,7 @@ export const DEFAULT_TOOLBAR_ITEMS: ToolbarItem[] = [
   {
     id: 'eraser',
     label: 'Eraser',
-    description: 'Erase on the active image. Alt-click for magic erase.',
+    description: 'Erase on the active image. {altClick} for magic erase.',
     icon: '⌫',
     shortcut: 'E',
     feature: NIE_FEATURES.eraser,
@@ -226,7 +236,7 @@ export const DEFAULT_TOOLBAR_ITEMS: ToolbarItem[] = [
   {
     id: 'clone',
     label: 'Clone',
-    description: 'Alt-click to set source, then paint to clone pixels.',
+    description: '{altClick} to set source, then paint to clone pixels.',
     icon: '◎',
     shortcut: 'S',
     feature: NIE_FEATURES.cloneStamp,
@@ -235,7 +245,7 @@ export const DEFAULT_TOOLBAR_ITEMS: ToolbarItem[] = [
   {
     id: 'healing',
     label: 'Healing',
-    description: 'Alt-click to set source, then paint to blend/heal.',
+    description: '{altClick} to set source, then paint to blend/heal.',
     icon: '🩹',
     shortcut: 'J',
     feature: NIE_FEATURES.healing,

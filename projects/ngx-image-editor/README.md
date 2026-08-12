@@ -17,6 +17,11 @@ Import styles once in your app:
 @import '@ebdev/ngx-image-editor/styles.css';
 ```
 
+For AVIF export, copy the packaged WASM encoder from
+`node_modules/@ebdev/ngx-image-editor/assets` to
+`assets/ngx-image-editor` with your application's build assets configuration.
+If you serve it elsewhere, set `avifWasmUrl` in `provideImageEditor`.
+
 ## Quick start
 
 ```ts
@@ -64,7 +69,7 @@ export class EditorPage {
 | Layers panel, opacity | ✓ | ✓ |
 | Basic filters | ✓ | ✓ |
 | Guides, grid, alignment | ✓ | ✓ |
-| PNG / JPEG / WebP export | ✓ | ✓ |
+| PNG / JPEG / WebP / AVIF / GIF / TIFF export | ✓ | ✓ |
 | Brush & eraser | | ✓ |
 | Masks, groups, blend modes | | ✓ |
 | Advanced selections | | ✓ |
@@ -77,18 +82,42 @@ export class EditorPage {
 
 ## Keyboard shortcuts
 
-| Action | Shortcut |
-| --- | --- |
-| Move / Text / Shape / Crop | `V` / `T` / `U` / `C` |
-| Brush / Eraser | `B` / `E` |
-| Undo / Redo | `Mod+Z` / `Mod+Shift+Z` |
-| Cut / Copy / Paste / Duplicate | `Mod+X` / `Mod+C` / `Mod+V` / `Mod+D` |
-| Delete | `Delete` |
-| Pan (hold) | `Space` |
-| Export / Open | `Mod+S` / `Mod+O` |
+| Action | Shortcut | Alternative |
+| --- | --- | --- |
+| Move / Text / Shape / Crop | `V` / `T` / `U` / `C` | |
+| Brush / Eraser | `B` / `E` | |
+| Transform | `Mod+T` | `F` |
+| Undo / Redo | `Mod+Z` / `Mod+Shift+Z` | |
+| Cut / Copy / Paste / Duplicate | `Mod+X` / `Mod+C` / `Mod+V` / `Mod+D` | |
+| Deselect | `Mod+Shift+A` | `Esc` |
+| Toggle rulers | `Mod+R` | `R` |
+| Delete | `Delete` | |
+| Pan (hold) | `Space` | |
+| Export / Open | `Mod+S` / `Mod+O` | |
 
 `Mod` is ⌘ on macOS and Ctrl on Windows/Linux. Override via
 `provideImageEditor({ shortcuts })`.
+
+### macOS
+
+Safari and Chrome keep `⌘T`, `⌘R` and `⌘⇧A` for themselves, so those actions have
+alternatives that the page always receives (`F`, `R`, `Esc`). Both variants work on every
+platform; on macOS the tooltips show the alternative.
+
+Modifier-clicks accept **⌘ as well as ⌥** — that covers zoom out with the Zoom tool, magic
+erase with the Eraser, and setting the source point for Clone and Healing. Tool tooltips are
+written from the placeholders `{altClick}` / `{altDrag}` and rendered per platform, so a
+custom `ToolbarItem` can use them too:
+
+```ts
+import { resolveModifierHints, isAltModifier } from 'ngx-image-editor';
+
+resolveModifierHints('{altClick} to set source.'); // "⌥-click (or ⌘-click) to set source."
+isAltModifier(pointerEvent); // true for ⌥-click, and for ⌘-click on macOS
+```
+
+Keyboard matching falls back to `KeyboardEvent.code`, so custom bindings that use `alt` still
+resolve on macOS where ⌥ rewrites the produced character (⌥B yields `∫`).
 
 ## Theming
 
