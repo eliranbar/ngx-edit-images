@@ -1,6 +1,6 @@
 {
   "name": "@ebdev/ngx-image-editor",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Professional Angular image editor with free and premium feature tiers",
   "keywords": [
     "angular",
@@ -12,7 +12,7 @@
     "filters"
   ],
   "license": "SEE LICENSE IN LICENSE",
-  "homepage": "https://www.ebdev-design.com",
+  "homepage": "https://ngx-image-editor.ebdev-design.com/",
   "publishConfig": {
     "access": "public"
   },
