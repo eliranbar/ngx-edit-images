@@ -3,6 +3,8 @@
 Angular workspace for **`@ebdev/ngx-image-editor`** — a professional image editor
 with a free forever tier and offline Ed25519-licensed premium tools.
 
+Homepage: [ngx-image-editor.ebdev-design.com](https://ngx-image-editor.ebdev-design.com/)
+
 ## Projects
 
 | Project | Path | Description |

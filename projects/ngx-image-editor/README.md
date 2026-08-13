@@ -3,6 +3,8 @@
 Professional Angular image editor with layers, filters, drawing, and a
 **free forever** core. Premium tools unlock with an offline signed license key.
 
+Homepage: [ngx-image-editor.ebdev-design.com](https://ngx-image-editor.ebdev-design.com/)
+
 ## Install
 
 ```bash
@@ -130,4 +132,4 @@ CSS variables on `.ngx-nie` / `.ngx-nie--dark`:
 
 Source-available. See the repository `LICENSE`. Free Features may be used in
 commercial apps forever. Premium Features require a purchased key from
-[ebdev-design.com](https://www.ebdev-design.com).
+[ngx-image-editor.ebdev-design.com](https://ngx-image-editor.ebdev-design.com/).
