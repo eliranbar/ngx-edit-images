@@ -8,6 +8,15 @@ import { ImageEditorComponent } from 'ngx-image-editor';
   styleUrl: './app.scss',
 })
 export class App {
+  /** Mobile nav. Collapsed into a menu below 720px, same as the marketing site. */
+  readonly menuOpen = signal(false);
+
+  /** Jump to a section and close the menu behind you, so the target is visible. */
+  go(id: string): void {
+    this.menuOpen.set(false);
+    this.scrollTo(id);
+  }
+
   readonly badges = [
     'Angular 18–22',
     'Standalone + signals',
