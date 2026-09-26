@@ -22,3 +22,16 @@ jobs:
       - run: npm run e2e
         env:
           CI: true
+
+  # Partial-compiled libraries ship templates as source, so the *consumer's* compiler
+  # parses them. Only a real build per supported Angular major proves the peer range.
+  compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:compat

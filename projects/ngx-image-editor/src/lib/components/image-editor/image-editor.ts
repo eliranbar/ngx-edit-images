@@ -5,6 +5,7 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
+  ViewEncapsulation,
   computed,
   effect,
   inject,
@@ -42,6 +43,13 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
   selector: 'ngx-image-editor',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // The stylesheet ships with the component so consumers get a styled editor with no
+  // angular.json entry. It is global on purpose: the same `.ngx-nie__*` classes are used
+  // by the child panels, by the floating text editor, and by the `:root` theme variables,
+  // none of which emulated encapsulation would reach. `styles.css` is still published for
+  // anyone loading it globally or using the panel components on their own.
+  styleUrls: ['../../styles/styles.css'],
+  encapsulation: ViewEncapsulation.None,
   imports: [NieToolbarComponent, NieLayersPanelComponent, NiePropertiesPanelComponent, DecimalPipe],
   host: {
     class: 'ngx-nie',
@@ -320,7 +328,7 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
             <label>Pages</label>
             <select
               [value]="pdf.mode"
-              (change)="pdfImport.update((p) => p ? { ...p, mode: $any($event.target).value } : p)"
+              (change)="setPdfMode($event)"
             >
               <option value="all">All pages (max {{ pdfMaxPages }})</option>
               <option value="first">First page only</option>
@@ -336,7 +344,7 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
                   min="1"
                   [max]="pdf.pageCount"
                   [value]="pdf.from"
-                  (input)="pdfImport.update((p) => p ? { ...p, from: +$any($event.target).value } : p)"
+                  (input)="setPdfFrom($event)"
                 />
                 <span>–</span>
                 <input
@@ -344,7 +352,7 @@ import { NiePropertiesPanelComponent } from '../properties-panel/properties-pane
                   min="1"
                   [max]="pdf.pageCount"
                   [value]="pdf.to"
-                  (input)="pdfImport.update((p) => p ? { ...p, to: +$any($event.target).value } : p)"
+                  (input)="setPdfTo($event)"
                 />
               </div>
             </div>
@@ -686,6 +694,21 @@ export class ImageEditorComponent implements AfterViewInit, OnDestroy {
   cancelPdfImport(): void {
     if (this.pdfImport()?.busy) return;
     this.pdfImport.set(null);
+  }
+
+  setPdfMode(event: Event): void {
+    const mode = (event.target as HTMLSelectElement).value as 'all' | 'first' | 'range';
+    this.pdfImport.update((p) => (p ? { ...p, mode } : p));
+  }
+
+  setPdfFrom(event: Event): void {
+    const from = +(event.target as HTMLInputElement).value;
+    this.pdfImport.update((p) => (p ? { ...p, from } : p));
+  }
+
+  setPdfTo(event: Event): void {
+    const to = +(event.target as HTMLInputElement).value;
+    this.pdfImport.update((p) => (p ? { ...p, to } : p));
   }
 
   async confirmPdfImport(): Promise<void> {

@@ -77,7 +77,7 @@ export async function inspectPdf(
     // metadata optional
   }
   const pageCount = pdf.numPages;
-  await pdf.destroy();
+  await loadingTask.destroy();
   return { pageCount, title };
 }
 
@@ -122,6 +122,6 @@ export async function rasterizePdfPages(
     });
   }
 
-  await pdf.destroy();
+  await loadingTask.destroy();
   return pages;
 }

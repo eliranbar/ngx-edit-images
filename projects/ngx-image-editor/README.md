@@ -13,7 +13,13 @@ npm install @ebdev/ngx-image-editor
 npm install pdfjs-dist
 ```
 
-Import styles once in your app:
+Styles ship with the component — there is nothing to add to `angular.json` or to a
+global stylesheet. `<ngx-image-editor>` carries the stylesheet itself and injects it
+when the editor is first rendered.
+
+Only if you use the panel components (`nie-toolbar`, `nie-layers-panel`,
+`nie-properties-panel`, …) standalone, without `<ngx-image-editor>`, import the
+stylesheet yourself:
 
 ```scss
 @import '@ebdev/ngx-image-editor/styles.css';
@@ -72,7 +78,8 @@ export class EditorPage {
 | Basic filters | ✓ | ✓ |
 | Guides, grid, alignment | ✓ | ✓ |
 | PNG / JPEG / WebP / AVIF / GIF / TIFF export | ✓ | ✓ |
-| Brush & eraser | | ✓ |
+| Brush | ✓ | ✓ |
+| Eraser | | ✓ |
 | Masks, groups, blend modes | | ✓ |
 | Advanced selections | | ✓ |
 | Clone / healing | | ✓ |

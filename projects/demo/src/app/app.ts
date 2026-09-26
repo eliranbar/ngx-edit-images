@@ -18,7 +18,7 @@ export class App {
   }
 
   readonly badges = [
-    'Angular 18–22',
+    'Angular 17–22',
     'Standalone + signals',
     'Free forever tier',
     'Offline license',
@@ -34,7 +34,8 @@ export class App {
     { name: 'Basic filters', tier: 'Free', desc: 'Brightness, contrast, saturation, blur, and more.' },
     { name: 'Guides, grid, alignment', tier: 'Free', desc: 'Snap while you design.' },
     { name: 'PNG / JPEG / WebP / AVIF / GIF / TIFF export', tier: 'Free', desc: 'Download your composition.' },
-    { name: 'Brush & eraser', tier: 'Premium', desc: 'Freehand drawing with pressure points.' },
+    { name: 'Brush', tier: 'Free', desc: 'Freehand drawing with pressure points.' },
+    { name: 'Eraser', tier: 'Premium', desc: 'Erase on the active image, or magic-erase a color.' },
     { name: 'Masks & groups', tier: 'Premium', desc: 'Non-destructive organization.' },
     { name: 'Blend modes', tier: 'Premium', desc: 'Multiply, screen, overlay, and more.' },
     { name: 'Advanced selections', tier: 'Premium', desc: 'Lasso and magic wand.' },

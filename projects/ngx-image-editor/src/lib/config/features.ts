@@ -18,8 +18,8 @@ export const NIE_FEATURES = {
   grid: 'grid',
   alignment: 'alignment',
   exportRaster: 'exportRaster',
-  // Premium
   brush: 'brush',
+  // Premium
   eraser: 'eraser',
   masks: 'masks',
   groups: 'groups',
@@ -62,10 +62,10 @@ export const FREE_FEATURES: readonly NieFeatureId[] = [
   NIE_FEATURES.grid,
   NIE_FEATURES.alignment,
   NIE_FEATURES.exportRaster,
+  NIE_FEATURES.brush,
 ];
 
 export const PREMIUM_FEATURES: readonly NieFeatureId[] = [
-  NIE_FEATURES.brush,
   NIE_FEATURES.eraser,
   NIE_FEATURES.masks,
   NIE_FEATURES.groups,

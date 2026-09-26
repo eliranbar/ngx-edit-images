@@ -190,7 +190,6 @@ export const DEFAULT_TOOLBAR_ITEMS: ToolbarItem[] = [
     icon: '✎',
     shortcut: 'B',
     feature: NIE_FEATURES.brush,
-    premium: true,
   },
   {
     id: 'eraser',

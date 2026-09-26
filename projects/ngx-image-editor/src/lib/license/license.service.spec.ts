@@ -30,15 +30,15 @@ describe('FeatureGateService', () => {
     for (const f of FREE_FEATURES) {
       expect(gate.isEnabled(f)).toBe(true);
     }
-    expect(gate.isEnabled(NIE_FEATURES.brush)).toBe(false);
+    expect(gate.isEnabled(NIE_FEATURES.masks)).toBe(false);
   });
 
   it('honors extraFeatures override', async () => {
     TestBed.configureTestingModule({
-      providers: [provideImageEditor({ extraFeatures: [NIE_FEATURES.brush] })],
+      providers: [provideImageEditor({ extraFeatures: [NIE_FEATURES.masks] })],
     });
     const gate = TestBed.inject(FeatureGateService);
     await gate.init();
-    expect(gate.isEnabled(NIE_FEATURES.brush)).toBe(true);
+    expect(gate.isEnabled(NIE_FEATURES.masks)).toBe(true);
   });
 });
